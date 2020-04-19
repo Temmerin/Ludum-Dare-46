@@ -4,22 +4,75 @@ const context = canvas.getContext('2d');
 //Set the canvas height and width
 var tWide = 21;
 var tHigh = 9;
-canvas.height = (64*tHigh);
-canvas.width = (64*tWide);
-//Fill the canvas with black
-context.fillStyle = 'black';
-context.fillRect(0,0,canvas.width,canvas.height);
+var tileSize = 64;
+canvas.height = (tileSize*tHigh);
+canvas.width = (tileSize*tWide);
 //---------------------------------------------
 //Variable initialisation
 var tileCount = 0;
-let tiles = [];
+let backgroundLayer = [
+	[]
+];
 
-var playerGold = 100;
+
+var uiPos = 6;
+var uiCount = 0;
+let uiLayer = [];
+
+var selectorX = 0;
+var selectorY = 0;
+var selectorID;;
+
+var playerGold = 150;
 var slimeHealth = 100;
+var mouseX, mouseY;
+
+var entranceX, entranceY;
+
+window.addEventListener('mousemove', e=>{
+	mouseX= e.x;
+	mouseY= e.y;
+	});
+window.addEventListener('mouseup', e=>{
+	if(mouseY < tileSize){
+		for(var x = 0; x < uiCount; x++){
+			if(mouseX >= (x+uiPos)*tileSize && mouseX <= ((x+uiPos)*tileSize)+tileSize){
+				selectorX = (x+uiPos)*tileSize;
+				selectorID = uiLayer[x];
+			}
+		}
+	}
+	else if(mouseY > tileSize){
+		if(playerGold >= selectorID.cost){
+			for(var x = 0; x < tWide; x++){
+				for(var y = 0; y < tHigh; y++){
+					if(mouseX >= backgroundLayer[x][y].positionX && mouseX <= backgroundLayer[x][y].positionX+tileSize){
+						if(mouseY >= backgroundLayer[x][y].positionY && mouseY <= backgroundLayer[x][y].positionY+tileSize){
+							if(backgroundLayer[x][y].texId != 64){
+								if(mouseX <=tileSize){
+									if(backgroundLayer[x+1][y].texId != 0 || backgroundLayer[x][y-1].texId != 0 || backgroundLayer[x][y+1].texId != 0){
+										backgroundLayer[x][y].texId = (selectorID.texId);
+										playerGold -= selectorID.cost;
+									}
+								}
+								else if(mouseX > tileSize || mouseX < (tWide*tileSize)){
+									if(backgroundLayer[x-1][y].texId != 0 || backgroundLayer[x+1][y].texId != 0 || backgroundLayer[x][y-1].texId != 0 || backgroundLayer[x][y+1].texId != 0){
+										backgroundLayer[x][y].texId = (selectorID.texId);
+										playerGold -= selectorID.cost;
+									}
+								}
+							}
+						}
+						
+					}
+				}
+			}
+		}
+	}
+});
+
 //---------------------------------------------
 //Load the texture sheet
-var texIndex = 2; //Total number of textures
-var texWidth = 10;// Number of textures per row
 var texturesheet = new Image();
 texturesheet.addEventListener('load', function(){
 		init();
@@ -34,63 +87,92 @@ function mainLoop(){
 }
 
 function update(){
-
+	
 }
 
 function draw(){
-	drawBackground();
-	drawUI();
+	//Clear canvas and fill to black
+	context.fillStyle = 'black';
+	context.clearRect(0,0,canvas.width, canvas.height);
+	context.fillRect(0,0,canvas.width,canvas.height);
+	
+	drawBackgroundLayer();
+	drawUILayer();
 }
 
 //----------------------------------------------
 //Utility functions
 function init(){
-	var newTile = {id:0,positionX:0,positionY:0,texId:0};
+	//Initialise Background Layer
+	for(var x = 0; x < tWide; x++){
+		backgroundLayer.push([]);
+	}
+	for(var x = 0; x < tWide; x++){
+		for(var y = backgroundLayer[x].length; y < tHigh; y++){
+			{
+				newTile = {texId:0, positionX:(x*tileSize), positionY:(y*tileSize), cost:10};
+				addBackgroundElement(x, 0, x*tileSize, y*tileSize);
+			}
+		}
+	}
+	
+	//Initialise UI Layer Here
+	addUIElement(2, 10);
+	addUIElement(3, 10);
+	addUIElement(4, 10);
+	addUIElement(5, 10);
+
+	setStartPosition(1, 2);
+	
+	draw();
+	mainLoop();
+}
+function drawBackgroundLayer(){
 	for(var x = 0; x < tWide; x++){
 		for(var y = 1; y < tHigh; y++){
-			newTile = {id:tileCount,positionX:(x*64),positionY:(y*64),texId:0};
-			let newLength = tiles.push(newTile);
-			tileCount++;
+			context.drawImage(texturesheet, (backgroundLayer[x][y].texId), 0, 64, 64, backgroundLayer[x][y].positionX, backgroundLayer[x][y].positionY, 64, 64);
 		}
-	} 
-	tiles[Math.floor(Math.random() * tileCount)].texId = 1; //Set starting tile to a random position
-	draw();
-	update();
-}
-function drawBackground(){
-	for(var i = 0; i < tileCount; i++){
-			context.drawImage(texturesheet, getTexXPos(i), 0, 64, 64, tiles[i].positionX, tiles[i].positionY, 64, 64);
 	}
 }
-function drawUI(){
+function drawUILayer(){
 	context.font = '25px serif';
 	context.fillStyle = 'Gold';
-	context.fillText('Gold: '+ playerGold, 10, 25);
-	context.fillText('Slime Health: '+ slimeHealth, (25*6), 25);
-	
-}
-function getTexXPos(index){
-	var xPos = 0;
-	if(getTexYPos(index) >= 1){
-		xPos = tiles[index].texId/texWidth;
-		return Number(xPos)+(64*tiles[index].texId);
+	context.fillText('Gold: '+ playerGold, tileSize*1, Number(tileSize/3));
+	context.fillText('Slime Health: '+ slimeHealth, (tileSize*3), Number(tileSize/3));
+	for(var i = 0; i < uiCount; i++){
+			context.drawImage(texturesheet, uiLayer[i].texId, 0, tileSize, tileSize, (i+uiPos)*tileSize, 0, tileSize, tileSize);
 	}
-	else{
-		return (tiles[index].texId*64);
-	}
+	context.strokeStyle = 'red';
+	context.lineWidth= 3;
+	context.strokeRect(selectorX, 0, tileSize, tileSize);
 }
-function getTexYPos(index){
-	var yPos = 0;
-	yPos = tiles[index].texId/texIndex;
-	return Number(yPos);
+function addUIElement(textureID, cost){
+	var newTile = {texId:(textureID*tileSize), cost:cost};
+	let newLength = uiLayer.push(newTile);
+	uiCount++;
 }
+function addBackgroundElement(tileId, textureID, xPos, yPos){
+	var newTile = {texId:textureID, positionX:xPos, positionY:yPos};
+	let newLength = backgroundLayer[tileId].push(newTile);
+	tileCount++;
+}
+function setStartPosition(startTexId, entranceTexId){
+	var playerStartX = Number(Math.floor(Math.random()*tWide));
+	var playerStartY = Number(Math.floor(Math.random()*(tHigh-1)+1));
+	backgroundLayer[playerStartX][playerStartY].texId = startTexId*tileSize; //Set starting tile to a random position
 	
-//----------------------------------------------
-//let tileGrid;
+	var	X=Math.floor(Math.random()*tWide)
+	var	Y=Math.floor(Math.random()*(tHigh-1)+1)
+	//if(Math.abs(playerStartX, X) > 5 && Math.abs(playerStartY, Y) > 5)
+	//{
+		backgroundLayer[X][Y].texId = entranceTexId*tileSize; //Set starting tile to a random position
+	//}
+	//else{
+	//	backgroundLayer[playerStartX+5][playerStartY+5].texId = entranceTexId*tileSize;
+	//}
+	 
+}
 
-//Pick a random starting position
-
-//init();
 
 
 
