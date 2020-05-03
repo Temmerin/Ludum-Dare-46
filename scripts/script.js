@@ -14,7 +14,7 @@ var mouseX, mouseY;
 var uiOffset = 5;
 var selector = {texId:0, cost:0};
 
-var playerGold = 150;
+var playerGold = {value:150};
 var slimeHealth = 100;
 
 var shouldSpawnEnemy = true;
@@ -36,7 +36,7 @@ window.addEventListener('mousemove', e=>{
 window.addEventListener('mouseup', e=>{
 	if(mouseY < 1){
 		if(mouseX >= uiOffset && mouseX <= (uiOffset+uiLayer.length))
-			selector = uiLayer[mouseX-uiOffset];
+			selector = uiLayer[mouseX];
 	}
 	/*else if(mouseY >= 1 && mouseY <= tHigh){
 		if(playerGold >= selector.cost){
@@ -123,7 +123,7 @@ function init(){
 	path = new pathfinder();
 	
 	//player = new entity(Number(Math.floor(Math.random()*tWide)),Number(Math.floor(Math.random()*(tHigh-1)+1)), 1, 'PlayerSlime/Slime', 64, 64, true, false);
-	player = new entity(Math.floor(Math.random()*(gridWidth-3))+2,Math.floor(Math.random()*(gridHeight-3))+2,'PlayerSlime/Slime', 64, 64, true, 23);
+	player = new entity(Math.floor(Math.random()*(gridWidth-3))+2,Math.floor(Math.random()*(gridHeight-3))+2,'Slime0.png', 64, 64, true, 23);
 	path.buildGrid(Math.floor(player.posX/TILESIZE)+1, Math.floor(player.posY/TILESIZE));
 	
 	//start draw & update loop
@@ -143,7 +143,7 @@ function drawUILayer(){
 	for(var i = 0; i < uiLayer.length; i++){
 		if(uiLayer[i].texId == 0){
 			context.drawImage(texturesheet, (uiLayer[i].texId*TILESIZE), 0, TILESIZE, TILESIZE, (TILESIZE*(i+1)), 0, TILESIZE, TILESIZE);
-			context.fillText(uiLayer[i].cost, (TILESIZE*(i+1))+(10), (TILESIZE/1.75));
+			context.fillText(uiLayer[i].cost.value, (TILESIZE*(i+1))+(10), (TILESIZE/1.75));
 		}
 		else if(uiLayer[i].string == 'Health'){
 			context.fillText(uiLayer[i].string, TILESIZE*(i+3), fontSize);
@@ -211,7 +211,7 @@ function debugScreen(show){
 		context.strokeStyle = 'Grey';
 		context.lineWidth= 0.5;
 		
-		pushLog(1,'Player Gold: '+playerGold+' || Slime Health: '+slimeHealth);
+		pushLog(1,'Player Gold: '+playerGold.value+' || Slime Health: '+slimeHealth);
 		pushLog(2,'FPS:' +Math.floor(fps));
 		
 		for(var i = 0; i < debugLog.length; i++){
